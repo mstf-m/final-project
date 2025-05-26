@@ -2,10 +2,13 @@
 
 namespace App\Models;
 
+use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
 class ActivityRequest extends Model
 {
+    use HasFactory;
+
     protected $primaryKey = 'request_id';
     protected $table = 'requests';
 
