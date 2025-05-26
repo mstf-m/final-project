@@ -8,6 +8,8 @@ use Illuminate\Http\Request;
 use App\Models\Activity;
 use App\Models\ActivityRequest;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
 
 class ProfileController extends Controller
 {
@@ -27,6 +29,65 @@ class ProfileController extends Controller
     }
 
     /**
+     * Upload user's profile picture
+     *
+     * @param  \Illuminate\Http\Request  $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function uploadAvatar(Request $request)
+    {
+        try {
+            $request->validate([
+                'avatar' => 'required|image|mimes:jpeg,png,jpg,gif|max:2048'
+            ]);
+
+            $user = $request->user();
+            
+            // Delete old avatar if exists
+            if ($user->avatar_url) {
+                $oldPath = str_replace('/storage/', '', $user->avatar_url);
+                if (Storage::disk('public')->exists($oldPath)) {
+                    Storage::disk('public')->delete($oldPath);
+                }
+            }
+
+            // Get the file
+            $file = $request->file('avatar');
+            if (!$file || !$file->isValid()) {
+                return response()->json([
+                    'status' => 'error',
+                    'message' => 'Invalid file upload'
+                ], 400);
+            }
+
+            // Generate a unique filename
+            $extension = $file->getClientOriginalExtension();
+            $filename = time() . '_' . Str::random(10) . '.' . $extension;
+            
+            // Move the file to storage
+            $file->move(storage_path('app/public/avatars'), $filename);
+            
+            // Update user's avatar_url
+            $user->update([
+                'avatar_url' => '/storage/avatars/' . $filename
+            ]);
+
+            return response()->json([
+                'status' => 'success',
+                'message' => 'Profile picture uploaded successfully',
+                'data' => new UserResource($user->fresh())
+            ]);
+
+        } catch (\Exception $e) {
+            \Log::error('Avatar upload error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to upload avatar: ' . $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Update user's profile
      *
      * @param  \Illuminate\Http\Request  $request
@@ -39,7 +100,6 @@ class ProfileController extends Controller
         $validated = $request->validate([
             'firstname' => 'sometimes|string|max:50',
             'lastname' => 'sometimes|string|max:50',
-            'avatar_url' => 'sometimes|url',
             'gender' => 'sometimes|in:male,female',
             'birthday' => 'sometimes|date',
             'bio' => 'sometimes|string|max:255',
