@@ -7,6 +7,7 @@ use App\Models\ActivityRequest;
 use App\Models\Notification;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Participant;
 
 class RequestController extends Controller
 {
@@ -57,5 +58,15 @@ class RequestController extends Controller
         }
 
         return response()->json($activityRequest);
+    }
+
+    public function myRequests(Request $request)
+    {
+        $requests = ActivityRequest::with(['activity'])
+            ->where('user_id', $request->user()->user_id)
+            ->orderBy('start_time', 'asc')
+            ->paginate(10);
+
+        return response()->json($requests);
     }
 }

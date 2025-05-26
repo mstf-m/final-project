@@ -71,4 +71,14 @@ class ActivityController extends Controller
         $participants = $activity->participants()->with('user')->paginate(10);
         return response()->json($participants);
     }
+
+    public function userActivities(Request $request, $userId)
+    {
+        $activities = Activity::with(['creator', 'category'])
+            ->where('creator_id', $userId)
+            ->orderBy('start_time', 'asc')
+            ->paginate(10);
+
+        return response()->json($activities);
+    }
 }

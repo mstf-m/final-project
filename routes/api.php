@@ -21,10 +21,12 @@ Route::middleware('auth:sanctum')->group(function () {
     // Activities
     Route::apiResource('activities', ActivityController::class);
     Route::get('activities/{activity}/participants', [ActivityController::class, 'participants']);
+    Route::get('users/{user}/activities', [ActivityController::class, 'userActivities']);
 
     // Requests
     Route::post('activities/{activity}/requests', [RequestController::class, 'store']);
     Route::patch('requests/{activityRequest}/status', [RequestController::class, 'updateStatus']);
+    Route::get('my-requests', [RequestController::class, 'myRequests']);
 
     // Notifications
     Route::get('notifications', [NotificationController::class, 'index']);

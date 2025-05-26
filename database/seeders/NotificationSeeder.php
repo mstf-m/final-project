@@ -9,7 +9,7 @@ class NotificationSeeder extends Seeder
 {
     public function run()
     {
-        // Create 100 notifications with Persian messages
+        // Create 10 notifications with Persian messages
         Notification::factory(10)->create();
     }
 }
