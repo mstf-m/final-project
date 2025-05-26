@@ -6,6 +6,7 @@ use App\Models\Activity;
 use App\Models\Participant;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use Illuminate\Support\Facades\Storage;
 
 class ActivityController extends Controller
 {
@@ -29,7 +30,30 @@ class ActivityController extends Controller
             'category_id' => 'nullable|exists:categories,category_id',
             'latitude' => 'nullable|numeric',
             'longitude' => 'nullable|numeric',
+            'image' => 'nullable|image|max:2048', // Max 2MB
         ]);
+
+        if ($request->hasFile('image')) {
+            $file = $request->file('image');
+            
+            if ($file->isValid()) {
+                try {
+                    // Ensure the directory exists
+                    $uploadPath = public_path('storage/activity-images');
+                    if (!file_exists($uploadPath)) {
+                        mkdir($uploadPath, 0777, true);
+                    }
+
+                    // Move the file to the public directory
+                    $filename = time() . '_' . $file->getClientOriginalName();
+                    $file->move($uploadPath, $filename);
+                    $validated['image_url'] = '/storage/activity-images/' . $filename;
+                } catch (\Exception $e) {
+                    \Log::error('File upload error: ' . $e->getMessage());
+                    return response()->json(['message' => 'Error uploading file: ' . $e->getMessage()], 500);
+                }
+            }
+        }
 
         $activity = $request->user()->activities()->create($validated);
 
@@ -52,7 +76,19 @@ class ActivityController extends Controller
             'start_time' => 'sometimes|date',
             'end_time' => 'sometimes|date|after:start_time',
             'max_participants' => 'sometimes|integer|min:1',
+            'image' => 'nullable|image|max:2048', // Max 2MB
         ]);
+
+        if ($request->hasFile('image')) {
+            // Delete old image if exists
+            if ($activity->image_url) {
+                $oldPath = str_replace('/storage/', '', $activity->image_url);
+                Storage::disk('public')->delete($oldPath);
+            }
+            
+            $path = $request->file('image')->store('activity-images', 'public');
+            $validated['image_url'] = '/storage/' . $path;
+        }
 
         $activity->update($validated);
 

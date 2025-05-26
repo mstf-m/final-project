@@ -64,7 +64,7 @@ class RequestController extends Controller
     {
         $requests = ActivityRequest::with(['activity'])
             ->where('user_id', $request->user()->user_id)
-            ->orderBy('start_time', 'asc')
+            ->orderBy('created_at', 'asc')
             ->paginate(10);
 
         return response()->json($requests);

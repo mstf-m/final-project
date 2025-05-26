@@ -27,6 +27,7 @@ return new class extends Migration
                   ->onDelete('set null');
             $table->decimal('latitude', 10, 8)->nullable();
             $table->decimal('longitude', 11, 8)->nullable();
+            $table->string('image_url')->nullable();
             $table->timestamps();
         });
     }

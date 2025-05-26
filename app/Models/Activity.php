@@ -21,7 +21,8 @@ class Activity extends Model
         'max_participants',
         'category_id',
         'latitude',
-        'longitude'
+        'longitude',
+        'image_url'
     ];
 
     public function creator()
