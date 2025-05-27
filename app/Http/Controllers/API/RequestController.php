@@ -21,8 +21,8 @@ class RequestController extends Controller
         $joinRequest = ActivityRequest::create([
             'activity_id' => $activity->activity_id,
             'user_id' => $request->user()->user_id,
-            'latitude' => $validated['latitude'],
-            'longitude' => $validated['longitude'],
+            'latitude' => $validated['latitude'] ?? null,
+            'longitude' => $validated['longitude'] ?? null,
         ]);
 
         // Notify activity creator
@@ -36,6 +36,16 @@ class RequestController extends Controller
 
     public function updateStatus(Request $request, ActivityRequest $activityRequest)
     {
+        // Allow users to update their own requests
+        if ($activityRequest->user_id === $request->user()->user_id) {
+            $validated = $request->validate([
+                'status' => 'required|in:pending,canceled'
+            ]);
+            $activityRequest->update(['status' => $validated['status']]);
+            return response()->json($activityRequest);
+        }
+
+        // For other status updates, check if user is the activity creator
         $this->authorize('update', $activityRequest->activity);
 
         $validated = $request->validate([
