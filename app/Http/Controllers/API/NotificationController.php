@@ -27,6 +27,6 @@ class NotificationController extends Controller
         Notification::whereIn('notification_id', $request->notification_ids)
             ->update(['is_read' => true]);
 
-        return response()->json(['message' => 'Notifications marked as read']);
+        return response()->json(['message' => 'اعلان‌ها به عنوان خوانده شده علامت‌گذاری شدند']);
     }
 }

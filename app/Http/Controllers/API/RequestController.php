@@ -28,7 +28,7 @@ class RequestController extends Controller
         // Notify activity creator
         Notification::create([
             'user_id' => $activity->creator_id,
-            'message' => 'New join request for your activity: ' . $activity->title
+            'message' => 'درخواست جدید برای فعالیت شما: ' . $activity->title
         ]);
 
         return response()->json($joinRequest, 201);
@@ -62,12 +62,12 @@ class RequestController extends Controller
 
                 Notification::create([
                     'user_id' => $activityRequest->user_id,
-                    'message' => "Your request to join '{$activityRequest->activity->title}' was accepted!"
+                    'message' => "درخواست شما برای پیوستن به '{$activityRequest->activity->title}' پذیرفته شد!"
                 ]);
             } else {
                 Notification::create([
                     'user_id' => $activityRequest->user_id,
-                    'message' => "Your request to join '{$activityRequest->activity->title}' was rejected."
+                    'message' => "درخواست شما برای پیوستن به '{$activityRequest->activity->title}' رد شد."
                 ]);
             }
 
