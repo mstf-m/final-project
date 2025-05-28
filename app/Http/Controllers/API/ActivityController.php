@@ -10,10 +10,15 @@ use Illuminate\Support\Facades\Storage;
 
 class ActivityController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $activities = Activity::with(['creator', 'category'])
-            ->orderBy('start_time', 'asc')
+        $query = Activity::with(['creator', 'category']);
+
+        if ($request->has('category_id')) {
+            $query->where('category_id', $request->category_id);
+        }
+
+        $activities = $query->orderBy('start_time', 'asc')
             ->paginate(10);
 
         return response()->json($activities);
