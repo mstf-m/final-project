@@ -36,38 +36,52 @@ class RequestController extends Controller
 
     public function updateStatus(Request $request, ActivityRequest $activityRequest)
     {
-        // Allow users to update their own requests
-        if ($activityRequest->user_id === $request->user()->user_id) {
+        try {
+            // For other status updates, check if user is the activity creator
+            $this->authorize('update', $activityRequest->activity);
+
             $validated = $request->validate([
-                'status' => 'required|in:pending,canceled'
+                'status' => 'required|in:accepted,rejected'
             ]);
+
             $activityRequest->update(['status' => $validated['status']]);
-            return response()->json($activityRequest);
-        }
 
-        // For other status updates, check if user is the activity creator
-        $this->authorize('update', $activityRequest->activity);
+            if ($validated['status'] === 'accepted') {
+                // Check if user is already a participant
+                $existingParticipant = Participant::where('activity_id', $activityRequest->activity_id)
+                    ->where('user_id', $activityRequest->user_id)
+                    ->first();
 
-        $validated = $request->validate([
-            'status' => 'required|in:accepted,rejected,canceled,expired'
-        ]);
+                if (!$existingParticipant) {
+                    Participant::create([
+                        'activity_id' => $activityRequest->activity_id,
+                        'user_id' => $activityRequest->user_id,
+                        'status' => 'accepted'
+                    ]);
+                }
 
-        $activityRequest->update(['status' => $validated['status']]);
+                Notification::create([
+                    'user_id' => $activityRequest->user_id,
+                    'message' => "Your request to join '{$activityRequest->activity->title}' was accepted!"
+                ]);
+            } else {
+                Notification::create([
+                    'user_id' => $activityRequest->user_id,
+                    'message' => "Your request to join '{$activityRequest->activity->title}' was rejected."
+                ]);
+            }
 
-        if ($validated['status'] === 'accepted') {
-            Participant::create([
-                'activity_id' => $activityRequest->activity_id,
-                'user_id' => $activityRequest->user_id,
-                'status' => 'active'
+            return response()->json([
+                'status' => 'success',
+                'data' => $activityRequest->fresh(['user', 'activity'])
             ]);
-
-            Notification::create([
-                'user_id' => $activityRequest->user_id,
-                'message' => "Your request to join '{$activityRequest->activity->title}' was accepted!"
-            ]);
+        } catch (\Exception $e) {
+            \Log::error('Request status update error: ' . $e->getMessage());
+            return response()->json([
+                'status' => 'error',
+                'message' => 'Failed to update request status: ' . $e->getMessage()
+            ], 500);
         }
-
-        return response()->json($activityRequest);
     }
 
     public function myRequests(Request $request)
