@@ -22,7 +22,12 @@ class Activity extends Model
         'category_id',
         'latitude',
         'longitude',
-        'image_url'
+        'image_url',
+        'tags'
+    ];
+
+    protected $casts = [
+        'tags' => 'array',
     ];
 
     public function creator()

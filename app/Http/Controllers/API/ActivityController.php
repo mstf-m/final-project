@@ -4,12 +4,20 @@ namespace App\Http\Controllers\API;
 
 use App\Models\Activity;
 use App\Models\Participant;
+use App\Services\GeminiAIService;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use Illuminate\Support\Facades\Storage;
 
 class ActivityController extends Controller
 {
+    protected $geminiService;
+
+    public function __construct(GeminiAIService $geminiService)
+    {
+        $this->geminiService = $geminiService;
+    }
+
     public function index(Request $request)
     {
         $query = Activity::with(['creator', 'category']);
@@ -37,6 +45,16 @@ class ActivityController extends Controller
             'longitude' => 'nullable|numeric',
             'image' => 'nullable|image|max:2048', // Max 2MB
         ]);
+
+        // Generate tags using Gemini AI
+        $tags = $this->geminiService->generateTags(
+            $validated['title'],
+            $validated['description'],
+            $validated['latitude'] ?? null,
+            $validated['longitude'] ?? null
+        );
+        
+        $validated['tags'] = $tags;
 
         if ($request->hasFile('image')) {
             $file = $request->file('image');
