@@ -26,7 +26,7 @@ class ActivityController extends Controller
             $query->where('category_id', $request->category_id);
         }
 
-        $activities = $query->orderBy('start_time', 'asc')
+        $activities = $query->orderBy('created_at', 'desc')
             ->paginate(10);
 
         return response()->json($activities);
