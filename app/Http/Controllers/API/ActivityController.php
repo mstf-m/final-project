@@ -46,13 +46,30 @@ class ActivityController extends Controller
             'image' => 'nullable|image|max:2048', // Max 2MB
         ]);
 
+        \Log::info('Creating new activity', [
+            'title' => $validated['title'],
+            'description_length' => mb_strlen($validated['description']),
+            'request_data' => $request->all()
+        ]);
+
         // Generate tags using Gemini AI
         $tags = $this->geminiService->generateTags(
             $validated['title'],
             $validated['description']
         );
         
+        \Log::info('Generated tags before validation', [
+            'tags' => $tags,
+            'tags_type' => gettype($tags),
+            'is_array' => is_array($tags)
+        ]);
+        
         $validated['tags'] = $tags;
+
+        \Log::info('Validated data with tags', [
+            'validated_data' => $validated,
+            'tags_in_validated' => $validated['tags'] ?? null
+        ]);
 
         if ($request->hasFile('image')) {
             $file = $request->file('image');
@@ -76,9 +93,25 @@ class ActivityController extends Controller
             }
         }
 
-        $activity = $request->user()->activities()->create($validated);
+        try {
+            $activity = $request->user()->activities()->create($validated);
+            
+            \Log::info('Activity created successfully', [
+                'activity_id' => $activity->activity_id,
+                'tags' => $activity->tags,
+                'tags_type' => gettype($activity->tags),
+                'raw_attributes' => $activity->getAttributes()
+            ]);
 
-        return response()->json($activity, 201);
+            return response()->json($activity, 201);
+        } catch (\Exception $e) {
+            \Log::error('Error creating activity', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'validated_data' => $validated
+            ]);
+            return response()->json(['message' => 'Error creating activity: ' . $e->getMessage()], 500);
+        }
     }
 
     public function show(Activity $activity)

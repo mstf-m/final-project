@@ -28,6 +28,12 @@ class Activity extends Model
 
     protected $casts = [
         'tags' => 'array',
+        'start_time' => 'datetime',
+        'end_time' => 'datetime'
+    ];
+
+    protected $attributes = [
+        'tags' => '[]'
     ];
 
     public function creator()
