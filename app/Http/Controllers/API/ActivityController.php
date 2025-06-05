@@ -186,4 +186,20 @@ class ActivityController extends Controller
 
         return response()->json($activities);
     }
+
+    public function searchByTags(Request $request)
+    {
+        $request->validate([
+            'tag' => 'required|string'
+        ]);
+
+        $tag = $request->tag;
+
+        $activities = Activity::with(['creator', 'category'])
+            ->whereJsonContains('tags', $tag)
+            ->orderBy('start_time', 'asc')
+            ->paginate(10);
+
+        return response()->json($activities);
+    }
 }
