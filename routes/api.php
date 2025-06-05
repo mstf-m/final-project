@@ -26,6 +26,7 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('users/{user}/activities', [ActivityController::class, 'userActivities']);
     Route::get('my-activities', [ActivityController::class, 'myActivitiesWithRequests']);
     Route::get('/activities/search/tags', [ActivityController::class, 'searchByTags']);
+    Route::post('/activities/enhance-description', [ActivityController::class, 'enhanceDescription']);
 
     // Requests
     Route::post('activities/{activity}/requests', [RequestController::class, 'store']);

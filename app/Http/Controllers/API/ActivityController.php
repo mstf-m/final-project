@@ -202,4 +202,31 @@ class ActivityController extends Controller
 
         return response()->json($activities);
     }
+
+    public function enhanceDescription(Request $request)
+    {
+        $validated = $request->validate([
+            'description' => 'required|string',
+            'title' => 'required|string',
+            'category' => 'required|string'
+        ]);
+
+        try {
+            $enhancedDescription = $this->geminiService->enhanceDescription(
+                $validated['title'],
+                $validated['description'],
+                $validated['category']
+            );
+
+            return response()->json([
+                'enhanced_description' => $enhancedDescription
+            ]);
+        } catch (\Exception $e) {
+            \Log::error('Error enhancing description', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return response()->json(['message' => 'Error enhancing description'], 500);
+        }
+    }
 }

@@ -171,4 +171,93 @@ class GeminiAIService
             return [];
         }
     }
+
+    public function enhanceDescription(string $title, string $description, string $category): string
+    {
+        try {
+            if (empty($title) || empty($description)) {
+                Log::error('Empty title or description provided', [
+                    'title' => $title,
+                    'description' => $description
+                ]);
+                return $description;
+            }
+
+            $prompt = $this->buildEnhancementPrompt($title, $description, $category);
+            
+            Log::info('Sending enhancement request to Gemini AI', [
+                'prompt' => $prompt,
+                'api_url' => $this->apiUrl,
+                'title_length' => mb_strlen($title),
+                'description_length' => mb_strlen($description)
+            ]);
+
+            $requestData = [
+                'contents' => [
+                    [
+                        'parts' => [
+                            [
+                                'text' => $prompt
+                            ]
+                        ]
+                    ]
+                ],
+                'generationConfig' => [
+                    'temperature' => 0.8,
+                    'topK' => 40,
+                    'topP' => 0.95,
+                    'maxOutputTokens' => 500,
+                ]
+            ];
+
+            $response = Http::withHeaders([
+                'Content-Type' => 'application/json',
+            ])->post($this->apiUrl . '?key=' . $this->apiKey, $requestData);
+
+            if ($response->successful()) {
+                $result = $response->json();
+                Log::info('Parsed API Response', ['result' => $result]);
+                
+                if (empty($result['candidates'][0]['content']['parts'][0]['text'])) {
+                    Log::error('No text content in response', ['response' => $result]);
+                    return $description;
+                }
+
+                $enhancedDescription = trim($result['candidates'][0]['content']['parts'][0]['text']);
+                Log::info('Enhanced description', ['description' => $enhancedDescription]);
+                return $enhancedDescription;
+            }
+
+            Log::error('Gemini AI API error', [
+                'status' => $response->status(),
+                'body' => $response->body()
+            ]);
+            return $description;
+        } catch (\Exception $e) {
+            Log::error('Gemini AI Service error', [
+                'message' => $e->getMessage(),
+                'trace' => $e->getTraceAsString()
+            ]);
+            return $description;
+        }
+    }
+
+    protected function buildEnhancementPrompt(string $title, string $description, string $category): string
+    {
+        return "You are a helpful assistant that enhances activity descriptions to make them more engaging and SEO-friendly. 
+        The text is in Farsi/Persian, and please return the enhanced description in Farsi/Persian as well.
+        
+        Please enhance the following activity description to:
+        1. Make it more engaging and motivating
+        2. Improve SEO by using relevant keywords naturally but do nit use star to specify them
+        3. Add appropriate emojis to make it more visually appealing
+        4. Keep the same meaning but make it more attractive
+        5. dont add any tag just give the new text
+        
+        Activity Title: {$title}
+        Activity Category: {$category}
+        Current Description: {$description}
+        
+        Return ONLY the enhanced description, no other text or explanation.";
+    }
 } 
