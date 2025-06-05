@@ -49,9 +49,7 @@ class ActivityController extends Controller
         // Generate tags using Gemini AI
         $tags = $this->geminiService->generateTags(
             $validated['title'],
-            $validated['description'],
-            $validated['latitude'] ?? null,
-            $validated['longitude'] ?? null
+            $validated['description']
         );
         
         $validated['tags'] = $tags;

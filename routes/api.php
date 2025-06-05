@@ -7,6 +7,7 @@ use App\Http\Controllers\API\RequestController;
 use App\Http\Controllers\API\NotificationController;
 use App\Http\Controllers\API\CategoryController;
 use App\Http\Controllers\API\ProfileController;
+use Illuminate\Http\Request;
 
 Route::post('/register', [AuthController::class, 'register'])->name('register');
 Route::post('/login', [AuthController::class, 'login'])->name('login');;
@@ -36,4 +37,26 @@ Route::middleware('auth:sanctum')->group(function () {
 
     // Categories
     Route::apiResource('categories', CategoryController::class)->only(['index', 'store']);
+});
+
+// Test route for Gemini AI tag generation
+Route::post('/test/generate-tags', function (Request $request) {
+    $request->validate([
+        'title' => 'required|string',
+        'description' => 'required|string'
+    ]);
+
+    $geminiService = app(App\Services\GeminiAIService::class);
+    $tags = $geminiService->generateTags(
+        $request->title,
+        $request->description
+    );
+
+    return response()->json([
+        'input' => [
+            'title' => $request->title,
+            'description' => $request->description
+        ],
+        'generated_tags' => $tags
+    ]);
 });
